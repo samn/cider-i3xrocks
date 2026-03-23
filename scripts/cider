@@ -4,38 +4,42 @@
 # Requires: curl, jq, xrescat
 # Token: ~/.config/cider-i3xrocks/token (plain text, mode 600)
 
-# Read API token
+# Read API token (optional — Cider can be configured to not require one)
 TOKEN_FILE="${HOME}/.config/cider-i3xrocks/token"
-[[ -f "$TOKEN_FILE" ]] || exit 0
-TOKEN="$(<"$TOKEN_FILE")"
-TOKEN="${TOKEN#"${TOKEN%%[![:space:]]*}"}"
-TOKEN="${TOKEN%"${TOKEN##*[![:space:]]}"}"
-[[ -n "$TOKEN" ]] || exit 0
+TOKEN=""
+if [[ -f "$TOKEN_FILE" ]]; then
+  TOKEN="$(<"$TOKEN_FILE")"
+  TOKEN="${TOKEN#"${TOKEN%%[![:space:]]*}"}"
+  TOKEN="${TOKEN%"${TOKEN##*[![:space:]]}"}"
+fi
 
 CIDER_URL="http://localhost:10767"
 CURL_OPTS=(--max-time 1 -sf)
-AUTH_HEADER="apitoken: ${TOKEN}"
+AUTH_ARGS=()
+if [[ -n "$TOKEN" ]]; then
+  AUTH_ARGS=(-H "apitoken: ${TOKEN}")
+fi
 
 # Check Cider is running
 HTTP_CODE=$(curl "${CURL_OPTS[@]}" -o /dev/null -w "%{http_code}" \
-  -H "$AUTH_HEADER" "$CIDER_URL/api/v1/playback/active" 2>/dev/null)
+  "${AUTH_ARGS[@]}" "$CIDER_URL/api/v1/playback/active" 2>/dev/null)
 [[ "$HTTP_CODE" == "204" ]] || exit 0
 
 # Handle left-click: toggle play/pause
 if [[ "${button:-}" == "1" ]]; then
   curl "${CURL_OPTS[@]}" -X POST \
-    -H "$AUTH_HEADER" "$CIDER_URL/api/v1/playback/playpause" >/dev/null 2>&1
+    "${AUTH_ARGS[@]}" "$CIDER_URL/api/v1/playback/playpause" >/dev/null 2>&1
   sleep 0.1
 fi
 
 # Check if playing
 IS_PLAYING=$(curl "${CURL_OPTS[@]}" \
-  -H "$AUTH_HEADER" "$CIDER_URL/api/v1/playback/is-playing" 2>/dev/null)
+  "${AUTH_ARGS[@]}" "$CIDER_URL/api/v1/playback/is-playing" 2>/dev/null)
 [[ "$IS_PLAYING" == "true" ]] || exit 0
 
 # Get now-playing info
 NOW_PLAYING=$(curl "${CURL_OPTS[@]}" \
-  -H "$AUTH_HEADER" "$CIDER_URL/api/v1/playback/now-playing" 2>/dev/null)
+  "${AUTH_ARGS[@]}" "$CIDER_URL/api/v1/playback/now-playing" 2>/dev/null)
 [[ -n "$NOW_PLAYING" ]] || exit 0
 
 ARTIST=$(printf '%s' "$NOW_PLAYING" | jq -r '.info.artistName // empty')
