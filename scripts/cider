@@ -1,6 +1,6 @@
 #!/bin/bash
 # i3xrocks blocklet for Cider (Apple Music)
-# Displays currently playing track. Left-click toggles play/pause.
+# Displays currently playing track.
 # Requires: curl, jq, xrescat
 # Token: ~/.config/cider-i3xrocks/token (plain text, mode 600)
 
@@ -18,13 +18,6 @@ CURL_OPTS=(--max-time 1 -sf)
 AUTH_ARGS=()
 if [[ -n "$TOKEN" ]]; then
   AUTH_ARGS=(-H "apitoken: ${TOKEN}")
-fi
-
-# Handle left-click: toggle play/pause
-if [[ "${button:-}" == "1" ]]; then
-  curl "${CURL_OPTS[@]}" -X POST \
-    "${AUTH_ARGS[@]}" "$CIDER_URL/api/v1/playback/playpause" >/dev/null 2>&1
-  sleep 0.1
 fi
 
 # Get now-playing info (single call — covers active check + playing check + track info)

@@ -2,7 +2,7 @@
 
 An [i3xrocks](https://github.com/regolith-linux/i3xrocks) blocklet that displays the currently playing track from [Cider](https://cider.sh/) (Apple Music) in your i3bar.
 
-Shows **Artist - Song** when music is playing. Left-click toggles play/pause. Hides automatically when Cider isn't running or nothing is playing.
+Shows **Artist - Song** when music is playing. Hides automatically when Cider isn't running or nothing is playing.
 
 ## Prerequisites
 
