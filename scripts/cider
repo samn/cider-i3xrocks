@@ -20,11 +20,6 @@ if [[ -n "$TOKEN" ]]; then
   AUTH_ARGS=(-H "apitoken: ${TOKEN}")
 fi
 
-# Check Cider is running
-HTTP_CODE=$(curl "${CURL_OPTS[@]}" -o /dev/null -w "%{http_code}" \
-  "${AUTH_ARGS[@]}" "$CIDER_URL/api/v1/playback/active" 2>/dev/null)
-[[ "$HTTP_CODE" =~ ^2 ]] || exit 0
-
 # Handle left-click: toggle play/pause
 if [[ "${button:-}" == "1" ]]; then
   curl "${CURL_OPTS[@]}" -X POST \
@@ -32,13 +27,7 @@ if [[ "${button:-}" == "1" ]]; then
   sleep 0.1
 fi
 
-# Check if playing
-IS_PLAYING=$(curl "${CURL_OPTS[@]}" \
-  "${AUTH_ARGS[@]}" "$CIDER_URL/api/v1/playback/is-playing" 2>/dev/null \
-  | jq -r '.is_playing // empty')
-[[ "$IS_PLAYING" == "true" ]] || exit 0
-
-# Get now-playing info
+# Get now-playing info (single call — covers active check + playing check + track info)
 NOW_PLAYING=$(curl "${CURL_OPTS[@]}" \
   "${AUTH_ARGS[@]}" "$CIDER_URL/api/v1/playback/now-playing" 2>/dev/null)
 [[ -n "$NOW_PLAYING" ]] || exit 0
