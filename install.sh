@@ -3,7 +3,7 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SCRIPTS_DEST="/usr/share/i3xrocks/scripts"
-CONF_DEST="/etc/regolith/i3xrocks/conf.d"
+CONF_DEST="/usr/share/i3xrocks/conf.d"
 
 # Check dependencies
 missing=()
@@ -21,8 +21,8 @@ sudo install -Dm755 "$SCRIPT_DIR/scripts/cider" "$SCRIPTS_DEST/cider"
 echo "Installed script to $SCRIPTS_DEST/cider"
 
 # Install config
-sudo install -Dm644 "$SCRIPT_DIR/conf.d/50-cider" "$CONF_DEST/50-cider"
-echo "Installed config to $CONF_DEST/50-cider"
+sudo install -Dm644 "$SCRIPT_DIR/conf.d/50_cider" "$CONF_DEST/50_cider"
+echo "Installed config to $CONF_DEST/50_cider"
 
 # Set up token directory
 TOKEN_DIR="$HOME/.config/cider-i3xrocks"
