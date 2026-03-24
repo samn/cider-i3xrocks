@@ -20,14 +20,18 @@ if [[ -n "$TOKEN" ]]; then
   AUTH_ARGS=(-H "apitoken: ${TOKEN}")
 fi
 
+# Cache last output so the block never goes blank between updates
+CACHE_FILE="${XDG_RUNTIME_DIR:-/tmp}/cider-i3xrocks-cache"
+show_cached() { [[ -f "$CACHE_FILE" ]] && cat "$CACHE_FILE"; exit 0; }
+
 # Get now-playing info (single call — covers active check + playing check + track info)
 NOW_PLAYING=$(curl "${CURL_OPTS[@]}" \
   "${AUTH_ARGS[@]}" "$CIDER_URL/api/v1/playback/now-playing" 2>/dev/null)
-[[ -n "$NOW_PLAYING" ]] || exit 0
+[[ -n "$NOW_PLAYING" ]] || show_cached
 
 ARTIST=$(printf '%s' "$NOW_PLAYING" | jq -r '.info.artistName // empty')
 SONG=$(printf '%s' "$NOW_PLAYING" | jq -r '.info.name // empty')
-[[ -n "$ARTIST" && -n "$SONG" ]] || exit 0
+[[ -n "$ARTIST" && -n "$SONG" ]] || show_cached
 
 # Theming via xrescat with defaults
 LABEL_ICON=${icon:-$(xrescat i3xrocks.label.cider "♫")}
@@ -47,4 +51,6 @@ DISPLAY="${DISPLAY//&/&amp;}"
 DISPLAY="${DISPLAY//</&lt;}"
 DISPLAY="${DISPLAY//>/&gt;}"
 
-echo "<span font_desc=\"${VALUE_FONT}\" color=\"${LABEL_COLOR}\">${LABEL_ICON}</span><span font_desc=\"${VALUE_FONT}\" color=\"${VALUE_COLOR}\"> ${DISPLAY}</span>"
+OUTPUT="<span font_desc=\"${VALUE_FONT}\" color=\"${LABEL_COLOR}\">${LABEL_ICON}</span><span font_desc=\"${VALUE_FONT}\" color=\"${VALUE_COLOR}\"> ${DISPLAY}</span>"
+printf '%s\n' "$OUTPUT" > "$CACHE_FILE"
+echo "$OUTPUT"
