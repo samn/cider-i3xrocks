@@ -20,18 +20,33 @@ if [[ -n "$TOKEN" ]]; then
   AUTH_ARGS=(-H "apitoken: ${TOKEN}")
 fi
 
-# Cache last output so the block never goes blank between updates
+# Cache last output so the block doesn't flicker on slow responses.
+# Only used when curl times out (Cider is running but slow); cleared otherwise.
 CACHE_FILE="${XDG_RUNTIME_DIR:-/tmp}/cider-i3xrocks-cache"
+clear_cache() { rm -f "$CACHE_FILE"; }
 show_cached() { [[ -f "$CACHE_FILE" ]] && cat "$CACHE_FILE"; exit 0; }
 
 # Get now-playing info (single call — covers active check + playing check + track info)
 NOW_PLAYING=$(curl "${CURL_OPTS[@]}" \
   "${AUTH_ARGS[@]}" "$CIDER_URL/api/v1/playback/now-playing" 2>/dev/null)
-[[ -n "$NOW_PLAYING" ]] || show_cached
+CURL_EXIT=$?
+
+# Exit code 28 = timeout (Cider is running but slow) — show cached output
+# Any other failure (7 = connection refused, etc.) = Cider not running — clear cache
+if [[ -z "$NOW_PLAYING" ]]; then
+  if [[ $CURL_EXIT -eq 28 ]]; then
+    show_cached
+  fi
+  clear_cache
+  exit 0
+fi
 
 ARTIST=$(printf '%s' "$NOW_PLAYING" | jq -r '.info.artistName // empty')
 SONG=$(printf '%s' "$NOW_PLAYING" | jq -r '.info.name // empty')
-[[ -n "$ARTIST" && -n "$SONG" ]] || show_cached
+if [[ -z "$ARTIST" || -z "$SONG" ]]; then
+  clear_cache
+  exit 0
+fi
 
 # Theming via xrescat with defaults
 LABEL_ICON=${icon:-$(xrescat i3xrocks.label.cider "♫")}
